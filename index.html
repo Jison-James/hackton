@@ -7,36 +7,52 @@
   <link rel="stylesheet" href="style.css"/>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       text-align: center;
       margin: 0;
       padding: 0;
-      background: #f8f8f8;
+      background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+      color: #333;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-top: 20px;
     }
     #avatar {
       width: 150px;
       border-radius: 50%;
       margin-top: 10px;
+      border: 4px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     input[type="file"],
     input[type="text"] {
       margin: 10px;
       padding: 10px;
       font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: border 0.2s ease-in-out;
+    }
+    input[type="file"]:focus,
+    input[type="text"]:focus {
+      border-color: #ff7b54;
     }
     button {
       margin: 6px;
-      padding: 10px 20px;
+      padding: 12px 20px;
       font-size: 1rem;
-      border-radius: 5px;
+      border-radius: 8px;
       border: none;
-      background-color: #333;
+      background: linear-gradient(135deg, #ff7b54, #ffb26b);
       color: white;
       cursor: pointer;
-      transition: background 0.2s ease-in-out;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     button:hover {
-      background-color: #555;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     #response {
       margin-top: 20px;
@@ -44,10 +60,17 @@
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       white-space: pre-wrap;
+    }
+    #camera {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
     }
   </style>
 </head>
@@ -56,10 +79,23 @@
   <img src="jubinavatar.png" alt="Avatar" id="avatar">
   <p>The friend who roasts your food, face, and feelings 💀</p>
 
+  <!-- Live Camera Section -->
+  <video id="camera" autoplay playsinline></video>
+  <canvas id="snapshotCanvas" style="display:none;"></canvas>
+  <br>
+  <button id="startCameraBtn">📷 Open Camera</button>
+  <button id="takePhotoBtn" style="display:none;">📸 Take Photo</button>
+  <button id="stopCameraBtn" style="display:none;">❌ Close Camera</button>
+  <br>
+
+  <!-- File upload (fallback / normal mode) -->
   <input type="file" id="upload" accept="image/*" />
   <br/>
+  
+  <!-- User text input -->
   <input type="text" id="userText" placeholder="Ask a riddle, say 'motivate me', etc..." />
 
+  <!-- Action buttons -->
   <div>
     <button onclick="trigger('food')">🍔 Analyze Food</button>
     <button onclick="trigger('face')">🧍 Roast My Face</button>
@@ -68,14 +104,59 @@
     <button onclick="trigger('riddle')">❓ Ask Riddle</button>
     <button onclick="trigger('motivate')">🔥 Motivate Me</button>
     <button onclick="trigger('chat')">💬 Random Chat</button>
-    
-    <!-- 🎯 New Feature Button -->
     <button onclick="window.location.href='face.html'">🎯 Emotion Mimic Game</button>
   </div>
 
+  <!-- Output -->
   <div id="response">Your useless friend awaits...</div>
 
-  <!-- ✅ Module script with main logic -->
+  <!-- Main logic -->
   <script type="module" src="main.js"></script>
+
+  <!-- Camera JS -->
+  <script>
+    let cameraStream;
+
+    document.getElementById("startCameraBtn").addEventListener("click", async () => {
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const videoEl = document.getElementById("camera");
+        videoEl.srcObject = cameraStream;
+        videoEl.style.display = "block";
+        document.getElementById("takePhotoBtn").style.display = "inline-block";
+        document.getElementById("stopCameraBtn").style.display = "inline-block";
+        document.getElementById("startCameraBtn").style.display = "none";
+      } catch (err) {
+        alert("⚠️ Unable to access camera. Please check permissions.");
+        console.error(err);
+      }
+    });
+
+    document.getElementById("takePhotoBtn").addEventListener("click", () => {
+      const videoEl = document.getElementById("camera");
+      const canvas = document.getElementById("snapshotCanvas");
+      const context = canvas.getContext("2d");
+      canvas.width = videoEl.videoWidth;
+      canvas.height = videoEl.videoHeight;
+      context.drawImage(videoEl, 0, 0);
+      canvas.toBlob((blob) => {
+        const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById("upload").files = dataTransfer.files;
+        alert("✅ Photo captured! Now click a feature button.");
+      }, "image/jpeg");
+    });
+
+    document.getElementById("stopCameraBtn").addEventListener("click", () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      document.getElementById("camera").style.display = "none";
+      document.getElementById("takePhotoBtn").style.display = "none";
+      document.getElementById("stopCameraBtn").style.display = "none";
+      document.getElementById("startCameraBtn").style.display = "inline-block";
+    });
+  </script>
 </body>
 </html>
