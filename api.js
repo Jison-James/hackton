@@ -155,10 +155,11 @@ async function handleFaceRoast(file) {
 
     // Send expression to Groq for roasting
     const insult = await groqPrompt(
-       `The user's face looks "${expression}". 
-       1. show your  Emotion is: ${expression} in one word 
-       2. Roast them in a mocking, NSFW, funny style. 
-          Be chaotic, sarcastic, and add emojis fitting the roast.`
+       `1: "Your emotion is: <emotion>" — keep it short and clear.
+      2: Roast them in a mocking, NSFW, funny style.
+       Be chaotic, sarcastic, and add emojis fitting the roast.
+   Make sure the first line is ONLY the emotion statement and
+   the second line is ONLY the roast.`
     );
 
     return { expression, insult };
