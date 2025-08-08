@@ -1,11 +1,12 @@
-// 📦 Import all handlers from api.js
+// 📦 Import all handlers + TTS from api.js
 import {
   handleFoodAnalyzer,
   handlePalmReader,
   handleMotivator,
   handleRiddle,
   handleGeneralChat,
-  handleFaceRoast
+  handleFaceRoast,
+  speakAnswer
 } from './api.js';
 
 // 🎥 Camera control variables
@@ -42,7 +43,7 @@ window.takePhoto = function () {
   canvas.toBlob((blob) => {
     const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
 
-    // Create DataTransfer to mimic file upload
+    // Put file into upload input for compatibility with trigger()
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
     document.getElementById("upload").files = dataTransfer.files;
@@ -164,6 +165,9 @@ window.trigger = async function (type) {
     );
 
     responseEl.innerHTML = formattedText;
+
+    // 🔊 Speak the answer (only plays if allowed by speakAnswer in api.js)
+    await speakAnswer(text);
 
   } catch (err) {
     console.error("🔥 Frontend Error:", err);

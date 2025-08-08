@@ -1,12 +1,19 @@
 // === api.js (Frontend Version) ===
 
-// 🔐 API Keys
+// 🔐 API Keys (kept as you had them)
 const GEMINI_KEY = 'AIzaSyDlCpqymj5ILrYFgoUxf2113x2tw0l9ETk';
 const GROQ_KEY = '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';
 const NUTRI_APP_ID = '27ec31f2'; // Unused
 const NUTRI_APP_KEY = '59239dbf28f86a7910934b8e0da79e37'; // Unused
 
-// 🧠 GROQ Prompt
+// === Google TTS Configuration ===
+const GOOGLE_TTS_KEY = 'AIzaSyBPposnUE01tiLp3ozuLSBcLDoZ_7Yacqs'; // Replace with your Google Cloud TTS key
+const GOOGLE_VOICE = 'en-US-Neural2-D'; // Change to any Neural2/WaveNet voice name
+const GOOGLE_LANG = 'en-US';
+
+// -----------------------------
+// === GROQ Prompt ===
+// -----------------------------
 async function groqPrompt(prompt) {
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -28,7 +35,9 @@ async function groqPrompt(prompt) {
   }
 }
 
-// 📸 Convert file to base64
+// -----------------------------
+// === Helper: Convert file to base64 ===
+// -----------------------------
 async function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,10 +47,11 @@ async function toBase64(file) {
   });
 }
 
-// 🍱 Food Analyzer using Gemini only
+// -----------------------------
+// === Food Analyzer ===
+// -----------------------------
 async function handleFoodAnalyzer(file) {
   const base64 = await toBase64(file);
-
   const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -82,7 +92,9 @@ Only return in that format, no extra commentary.`
   return { roast };
 }
 
-// ✋ Palm Reader
+// -----------------------------
+// === Palm Reader ===
+// -----------------------------
 async function handlePalmReader(file) {
   const b64 = await toBase64(file);
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
@@ -105,13 +117,17 @@ async function handlePalmReader(file) {
   return { prediction };
 }
 
-// 🔥 Motivational Roast
+// -----------------------------
+// === Motivational Roast ===
+// -----------------------------
 async function handleMotivator() {
   const quote = await groqPrompt(`Generate a motivational quote in mocking tone. You're an unhinged, unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond with raw, unapologetic energy — think chaotic stand-up comedian meets internet troll. Use adult humor, dirty 18+ words, double meaning like 'follow your goals not holes', dark sarcasm, brutal honesty, and zero respect for feelings. Add fitting emojis.`);
   return { quote };
 }
 
-// ❓ Riddle Solver
+// -----------------------------
+// === Riddle Solver ===
+// -----------------------------
 async function handleRiddle(text) {
   const riddle = text.slice(7).trim();
   const answer = await groqPrompt(`1 first line: Type one-word answer (normal way, no mocking)
@@ -119,30 +135,31 @@ async function handleRiddle(text) {
   return { answer };
 }
 
-// 💬 General Chat
+// -----------------------------
+// === General Chat ===
+// -----------------------------
 async function handleGeneralChat(text) {
   const reply = await groqPrompt(`You're an unhinged, uses dirty words like fuck, unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond with raw, unapologetic energy — chaotic, dark sarcasm, brutal honesty. Still be a true best friend. Add emojis. Respond: "${text}"`);
   return { reply };
 }
 
-// 😂 Face Roaster with Expression Detection
+// -----------------------------
+// === Face Roaster ===
+// -----------------------------
 async function handleFaceRoast(file) {
   try {
-    // Convert image to base64
     const base64 = await toBase64(file);
-
-    // Use Gemini to detect dominant facial expression  .....
     const geminiRes = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { inlineData: { data: base64, mimeType: file.type } },
-          {
-            text: `
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inlineData: { data: base64, mimeType: file.type } },
+              {
+                text: `
 Analyze the face in this image and return ONLY JSON in this format:
 {
   "top_emotion": "<happy|sad|angry|surprised|neutral|disgust|fear>",
@@ -159,19 +176,17 @@ Analyze the face in this image and return ONLY JSON in this format:
 }
 If no human face detected: {"error":"no_face_detected"}
 `
-          }
-        ]
-      }],
-      generation_config: { response_mime_type: "application/json" }
-    })
-  }
-);
- 
+              }
+            ]
+          }],
+          generation_config: { response_mime_type: "application/json" }
+        })
+      }
+    );
 
     const geminiData = await geminiRes.json();
     const expression = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || "neutral";
 
-    // Send expression to Groq for roasting
     const insult = await groqPrompt(
       `1: "Your emotion is: <emotion>" — keep it short and clear.
       2: Roast them in a mocking, NSFW, funny style.
@@ -188,12 +203,49 @@ If no human face detected: {"error":"no_face_detected"}
   }
 }
 
+// -----------------------------
+// === Google Cloud TTS ===
+// -----------------------------
+async function speakAnswer(text) {
+  try {
+    // Play only on index.html
+    const path = window.location.pathname.toLowerCase();
+    const basename = path.split('/').pop();
+    if (basename !== '' && basename !== 'index.html' && basename !== 'index') return;
+    if (basename === 'face.html' || basename === 'mazesolver.html') return;
+
+    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode: GOOGLE_LANG, name: GOOGLE_VOICE },
+        audioConfig: { audioEncoding: "MP3" }
+      })
+    });
+
+    const data = await res.json();
+    if (!data.audioContent) {
+      console.error("Google TTS Error:", data);
+      return;
+    }
+
+    const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+    audio.play().catch(err => console.error("Audio play error:", err));
+  } catch (err) {
+    console.error("Google TTS failed:", err);
+  }
+}
+
+// -----------------------------
+// === Exports ===
+// -----------------------------
 export {
   handleFoodAnalyzer,
   handlePalmReader,
   handleMotivator,
   handleRiddle,
   handleGeneralChat,
-  handleFaceRoast
+  handleFaceRoast,
+  speakAnswer
 };
-
