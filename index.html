@@ -4,39 +4,72 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Useless Friend - Honest AI</title>
-  <link rel="stylesheet" href="style.css"/>
+  
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Fredoka', sans-serif;
       text-align: center;
       margin: 0;
       padding: 0;
-      background: #f8f8f8;
+      background: linear-gradient(135deg, #fdfbfb, #ebedee);
+      min-height: 100vh;
+    }
+    h1 {
+      margin-top: 20px;
+      color: #ff4e50;
+      font-size: 2.5rem;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
+    p {
+      color: #555;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
     }
     #avatar {
       width: 150px;
       border-radius: 50%;
       margin-top: 10px;
+      animation: float 3s ease-in-out infinite;
+      box-shadow: 0 0 20px rgba(255,78,80,0.4);
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
     }
     input[type="file"],
     input[type="text"] {
       margin: 10px;
       padding: 10px;
       font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      outline: none;
+      transition: border 0.3s;
+    }
+    input[type="file"]:focus,
+    input[type="text"]:focus {
+      border-color: #ff4e50;
     }
     button {
       margin: 6px;
       padding: 10px 20px;
       font-size: 1rem;
-      border-radius: 5px;
+      border-radius: 8px;
       border: none;
-      background-color: #333;
+      background: linear-gradient(135deg, #ff4e50, #fc913a);
       color: white;
       cursor: pointer;
-      transition: background 0.2s ease-in-out;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
     }
     button:hover {
-      background-color: #555;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
     }
     #response {
       margin-top: 20px;
@@ -45,9 +78,12 @@
       margin-left: auto;
       margin-right: auto;
       background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       white-space: pre-wrap;
+      font-size: 1.05rem;
+      color: #333;
+      line-height: 1.4;
     }
   </style>
 </head>
@@ -60,13 +96,6 @@
   <br/>
   <input type="text" id="userText" placeholder="Ask a riddle, say 'motivate me', etc..." />
 
-  <!-- Voice toggle button -->
-  <div style="margin-top: 10px;">
-    <button id="voiceToggleBtn" style="background: linear-gradient(135deg, #4caf50, #81c784);">
-      🔊 Voice: OFF
-    </button>
-  </div>
-
   <div>
     <button onclick="trigger('food')">🍔 Analyze Food</button>
     <button onclick="trigger('face')">🧍 Roast My Face</button>
@@ -75,14 +104,11 @@
     <button onclick="trigger('riddle')">❓ Ask Riddle</button>
     <button onclick="trigger('motivate')">🔥 Motivate Me</button>
     <button onclick="trigger('chat')">💬 Random Chat</button>
-    
-    <!-- 🎯 New Feature Button -->
     <button onclick="window.location.href='face.html'">🎯 Emotion Mimic Game</button>
   </div>
 
   <div id="response">Your useless friend awaits...</div>
 
-  <!-- ✅ Module script with main logic -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
