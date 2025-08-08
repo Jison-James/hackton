@@ -157,9 +157,7 @@ async function handleFaceRoast(file) {
     const insult = await groqPrompt(
        `1: "Your emotion is: <emotion>" — keep it short and clear.
       2: Roast them in a mocking, NSFW, funny style.
-       Be chaotic, sarcastic, and add emojis fitting the roast.
-   Make sure the first line is ONLY the emotion statement and
-   the second line is ONLY the roast.`
+       Be chaotic, sarcastic, and add emojis fitting the roast.`
     );
 
     return { expression, insult };
