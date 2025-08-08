@@ -3,6 +3,8 @@
 // 🔐 API Keys
 const GEMINI_KEY = 'AIzaSyDlCpqymj5ILrYFgoUxf2113x2tw0l9ETk';
 const GROQ_KEY = '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';
+const NUTRI_APP_ID = '27ec31f2'; // Unused
+const NUTRI_APP_KEY = '59239dbf28f86a7910934b8e0da79e37'; // Unused
 
 // 🧠 GROQ Prompt
 async function groqPrompt(prompt) {
