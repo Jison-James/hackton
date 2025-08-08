@@ -1,13 +1,67 @@
-// 📦 Import all handlers + TTS from api.js
+// 📦 Import all handlers from api.js
 import {
   handleFoodAnalyzer,
   handlePalmReader,
   handleMotivator,
   handleRiddle,
   handleGeneralChat,
-  handleFaceRoast,
-  speakAnswer
+  handleFaceRoast
 } from './api.js';
+
+// 🎥 Camera control variables
+let cameraStream = null;
+
+// 📷 Start camera
+window.startCamera = async function () {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    const videoEl = document.getElementById("camera");
+    videoEl.srcObject = cameraStream;
+    videoEl.style.display = "block";
+
+    document.getElementById("takePhotoBtn").style.display = "inline-block";
+    document.getElementById("stopCameraBtn").style.display = "inline-block";
+    document.getElementById("startCameraBtn").style.display = "none";
+    document.getElementById("upload").style.display = "none"; // Hide file picker while camera is on
+  } catch (err) {
+    alert("⚠️ Unable to access camera. Please check permissions.");
+    console.error(err);
+  }
+};
+
+// 📸 Capture photo
+window.takePhoto = function () {
+  const videoEl = document.getElementById("camera");
+  const canvas = document.getElementById("snapshotCanvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  context.drawImage(videoEl, 0, 0);
+
+  canvas.toBlob((blob) => {
+    const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+
+    // Create DataTransfer to mimic file upload
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    document.getElementById("upload").files = dataTransfer.files;
+
+    alert("✅ Photo captured! Now click a feature button.");
+  }, "image/jpeg");
+};
+
+// ❌ Stop camera
+window.stopCamera = function () {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+  }
+  document.getElementById("camera").style.display = "none";
+  document.getElementById("takePhotoBtn").style.display = "none";
+  document.getElementById("stopCameraBtn").style.display = "none";
+  document.getElementById("startCameraBtn").style.display = "inline-block";
+  document.getElementById("upload").style.display = "inline-block"; // Show file picker again
+};
 
 // ⚡ Main trigger for all buttons
 window.trigger = async function (type) {
@@ -23,7 +77,7 @@ window.trigger = async function (type) {
     switch (type) {
       case "food":
         if (!file) {
-          responseEl.innerText = "Upload a food image first! 🍱";
+          responseEl.innerText = "Upload or capture a food image first! 🍱";
           return;
         }
         result = await handleFoodAnalyzer(file);
@@ -31,7 +85,7 @@ window.trigger = async function (type) {
 
       case "face":
         if (!file) {
-          responseEl.innerText = "Upload a face image first! 🧑";
+          responseEl.innerText = "Upload or capture a face image first! 🧑";
           return;
         }
         result = await handleFaceRoast(file);
@@ -45,7 +99,7 @@ window.trigger = async function (type) {
 
       case "palm":
         if (!file) {
-          responseEl.innerText = "Upload a palm image first! 🖐️";
+          responseEl.innerText = "Upload or capture a palm image first! 🖐️";
           return;
         }
         result = await handlePalmReader(file);
@@ -110,11 +164,6 @@ window.trigger = async function (type) {
     );
 
     responseEl.innerHTML = formattedText;
-
-    // 🔊 Play AI's reply in voice mode (only if ON & index.html)
-    speakAnswer(text).catch(err => {
-      console.warn("TTS playback error:", err);
-    });
 
   } catch (err) {
     console.error("🔥 Frontend Error:", err);
