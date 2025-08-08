@@ -6,15 +6,6 @@ const GROQ_KEY = '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';
 const NUTRI_APP_ID = '27ec31f2'; // Unused
 const NUTRI_APP_KEY = '59239dbf28f86a7910934b8e0da79e37'; // Unused
 
-// -----------------------------
-// === Google TTS Configuration ===
-// -----------------------------
-// Put your Google Cloud TTS API key here (or preferably proxy this server-side).
-// NOTE: frontend key is visible to users. For production, use a backend proxy.
-const GOOGLE_TTS_KEY = 'AIzaSyBPposnUE01tiLp3ozuLSBcLDoZ_7Yacqs'; // <-- REPLACE
-const GOOGLE_VOICE = 'en-US-Neural2-D';           // Neural2/WaveNet voice
-const GOOGLE_LANG = 'en-US';
-
 // LocalStorage key for voice toggle
 const VOICE_STORAGE_KEY = 'uf_voice_enabled';
 
@@ -156,10 +147,8 @@ async function handleGeneralChat(text) {
 // -----------------------------
 async function handleFaceRoast(file) {
   try {
-    // Convert image to base64
     const base64 = await toBase64(file);
 
-    // Use Gemini to detect dominant facial expression  .....
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
       {
@@ -195,11 +184,9 @@ If no human face detected: {"error":"no_face_detected"}
       }
     );
 
-
     const geminiData = await geminiRes.json();
     const expression = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || "neutral";
 
-    // Send expression to Groq for roasting
     const insult = await groqPrompt(
       `1: "Your emotion is: <emotion>" — keep it short and clear.
       2: Roast them in a mocking, NSFW, funny style.
@@ -217,92 +204,22 @@ If no human face detected: {"error":"no_face_detected"}
 }
 
 // -----------------------------
-// === Google Cloud TTS (Neural2) + Voice Toggle UI ===
+// === Browser SpeechSynthesis TTS ===
 // -----------------------------
-// speakAnswer(text)
-// - Calls Google Cloud TTS REST synthesize endpoint with Neural2 voice
-// - Only plays if user has enabled voice mode (toggle) AND page is index.html
-// - Detailed error logging for Google TTS failures
-// - Returns the Audio element or null
-async function speakAnswer(text, options = {}) {
-  try {
-    // guard: only index.html (or root)
-    const path = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname.toLowerCase() : '';
-    const basename = path.split('/').pop();
+async function speakAnswer(text) {
+  const path = window.location.pathname.toLowerCase();
+  const basename = path.split('/').pop();
 
-    // Skip on these pages always
-    if (basename === 'face.html' || basename === 'faces.html' || basename === 'mazesolver.html' || basename === 'mazesolver') {
-      // explicit skip
-      return null;
-    }
+  if (basename && basename !== '' && basename !== 'index.html' && basename !== 'index') return;
+  if (basename === 'face.html' || basename === 'mazesolver.html') return;
+  if (!isVoiceEnabled()) return;
 
-    // If not index, skip unless root '' or index
-    if (basename && basename !== '' && basename !== 'index.html' && basename !== 'index') {
-      return null;
-    }
-
-    // Check if user enabled voice
-    if (!isVoiceEnabled()) {
-      // Voice mode turned off by user
-      return null;
-    }
-
-    // Validate key
-    if (!GOOGLE_TTS_KEY || GOOGLE_TTS_KEY.includes('YOUR_')) {
-      console.warn('speakAnswer: GOOGLE_TTS_KEY is not set. Skipping TTS playback.');
-      return null;
-    }
-
-    // Build request
-    const payload = {
-      input: { text },
-      voice: { languageCode: GOOGLE_LANG, name: GOOGLE_VOICE },
-      audioConfig: { audioEncoding: "MP3" }
-    };
-
-    const resp = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    // Detailed handling for non-OK responses
-    if (!resp.ok) {
-      // Try parse JSON error body
-      let bodyText = '';
-      try {
-        const bodyJson = await resp.json();
-        bodyText = JSON.stringify(bodyJson, null, 2);
-      } catch (e) {
-        bodyText = await resp.text().catch(() => '(no body)');
-      }
-      console.error(`speakAnswer: Google TTS request failed: HTTP ${resp.status}`, bodyText);
-      return null;
-    }
-
-    // Parse JSON result
-    const data = await resp.json();
-    if (!data || !data.audioContent) {
-      console.error('speakAnswer: Google TTS returned no audioContent:', JSON.stringify(data, null, 2));
-      return null;
-    }
-
-    // Play the audio
-    try {
-      const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-      await audio.play().catch(err => {
-        console.warn('speakAnswer: audio.play() rejected', err);
-      });
-      return audio;
-    } catch (err) {
-      console.error('speakAnswer: failed to create/play audio', err);
-      return null;
-    }
-
-  } catch (err) {
-    console.error('speakAnswer: unexpected error', err);
-    return null;
-  }
+  speechSynthesis.cancel(); // stop any ongoing speech
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  speechSynthesis.speak(utterance);
 }
 
 // -----------------------------
@@ -311,7 +228,7 @@ async function speakAnswer(text, options = {}) {
 function isVoiceEnabled() {
   try {
     return localStorage.getItem(VOICE_STORAGE_KEY) === '1';
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -319,9 +236,7 @@ function isVoiceEnabled() {
 function setVoiceEnabled(enabled) {
   try {
     localStorage.setItem(VOICE_STORAGE_KEY, enabled ? '1' : '0');
-  } catch (e) {
-    console.warn('setVoiceEnabled: localStorage failed', e);
-  }
+  } catch {}
   updateVoiceButtonUI();
 }
 
@@ -331,73 +246,37 @@ function toggleVoiceEnabled() {
   return newVal;
 }
 
-// UI updater - safe no-op if DOM not present
 function updateVoiceButtonUI() {
-  try {
-    const btn = document.getElementById('voiceToggleBtn');
-    if (!btn) return;
-    btn.textContent = isVoiceEnabled() ? '🔊 Voice: ON' : '🔈 Voice: OFF';
-    btn.setAttribute('aria-pressed', isVoiceEnabled() ? 'true' : 'false');
-  } catch (e) {
-    // ignore
-  }
+  const btn = document.getElementById('voiceToggleBtn');
+  if (!btn) return;
+  btn.textContent = isVoiceEnabled() ? '🔊 Voice: ON' : '🔈 Voice: OFF';
 }
 
-// Inject a simple toggle button into index.html once DOM is ready
 function initVoiceToggleUI() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-  // only create UI on index.html (or root)
   const path = window.location.pathname.toLowerCase();
   const basename = path.split('/').pop();
-  if (basename && basename !== '' && basename !== 'index.html' && basename !== 'index') {
-    return;
-  }
+  if (basename && basename !== '' && basename !== 'index.html' && basename !== 'index') return;
 
-  // Wait until DOM content loaded
   const setup = () => {
-    // avoid creating twice
     if (document.getElementById('voiceToggleBtn')) {
       updateVoiceButtonUI();
       return;
     }
 
-    // find a place to insert the button: try above #response or near controls
-    const insertBeforeEl = document.getElementById('response') || document.getElementById('upload') || document.querySelector('h1');
+    const insertBeforeEl = document.getElementById('response') || document.querySelector('h1');
     const container = document.createElement('div');
-    container.style.display = 'flex';
-    container.style.justifyContent = 'center';
     container.style.margin = '10px';
-    container.style.gap = '10px';
 
     const btn = document.createElement('button');
     btn.id = 'voiceToggleBtn';
     btn.type = 'button';
-    btn.style.padding = '10px 14px';
-    btn.style.borderRadius = '8px';
-    btn.style.border = 'none';
-    btn.style.cursor = 'pointer';
-    btn.style.background = 'linear-gradient(135deg,#6b8cff,#a28bff)';
-    btn.style.color = 'white';
-    btn.style.fontWeight = '600';
-    btn.style.boxShadow = '0 3px 8px rgba(0,0,0,0.12)';
-
     btn.addEventListener('click', () => {
-      const enabled = toggleVoiceEnabled();
-      // small UX feedback
-      btn.textContent = enabled ? '🔊 Voice: ON' : '🔈 Voice: OFF';
+      toggleVoiceEnabled();
+      updateVoiceButtonUI();
     });
 
     container.appendChild(btn);
-
-    // Insert into DOM
-    if (insertBeforeEl && insertBeforeEl.parentNode) {
-      insertBeforeEl.parentNode.insertBefore(container, insertBeforeEl);
-    } else {
-      document.body.insertBefore(container, document.body.firstChild);
-    }
-
-    // Set initial label
+    insertBeforeEl.parentNode.insertBefore(container, insertBeforeEl);
     updateVoiceButtonUI();
   };
 
@@ -408,7 +287,6 @@ function initVoiceToggleUI() {
   }
 }
 
-// Auto-initialize voice toggle UI on module load for index.html
 initVoiceToggleUI();
 
 // -----------------------------
@@ -422,9 +300,7 @@ export {
   handleGeneralChat,
   handleFaceRoast,
   speakAnswer,
-  // voice control helpers (optional usage from main.js)
   isVoiceEnabled,
-  setVoiceEnabled,
   toggleVoiceEnabled,
   initVoiceToggleUI
 };

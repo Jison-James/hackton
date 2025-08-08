@@ -111,7 +111,7 @@ window.trigger = async function (type) {
 
     responseEl.innerHTML = formattedText;
 
-    // 🔊 Play voice (only if Voice Mode is ON in api.js)
+    // 🔊 Play AI's reply in voice mode (only if ON & index.html)
     speakAnswer(text).catch(err => {
       console.warn("TTS playback error:", err);
     });
