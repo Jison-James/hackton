@@ -206,21 +206,53 @@ If no human face detected: {"error":"no_face_detected"}
 // -----------------------------
 // === Browser SpeechSynthesis TTS ===
 // -----------------------------
+// -----------------------------
+// === Browser SpeechSynthesis TTS (Improved) ===
+// -----------------------------
 async function speakAnswer(text) {
   const path = window.location.pathname.toLowerCase();
   const basename = path.split('/').pop();
 
+  // Restrict to index.html only
   if (basename && basename !== '' && basename !== 'index.html' && basename !== 'index') return;
   if (basename === 'face.html' || basename === 'mazesolver.html') return;
+
+  // Voice mode must be enabled
   if (!isVoiceEnabled()) return;
 
-  speechSynthesis.cancel(); // stop any ongoing speech
+  // Stop any ongoing speech
+  speechSynthesis.cancel();
+
+  // Wait until voices are loaded
+  let voices = speechSynthesis.getVoices();
+  if (!voices.length) {
+    await new Promise(resolve => {
+      speechSynthesis.onvoiceschanged = () => {
+        voices = speechSynthesis.getVoices();
+        resolve();
+      };
+    });
+  }
+
+  // Choose a natural voice if available
+  let voice = voices.find(v => v.name.includes('Google US English')) ||
+              voices.find(v => v.name.includes('Microsoft')) ||
+              voices.find(v => v.lang === 'en-US') ||
+              voices[0];
+
+  // Create the utterance
   const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = voice || null;
   utterance.lang = 'en-US';
   utterance.rate = 1;
   utterance.pitch = 1;
-  speechSynthesis.speak(utterance);
+
+  // Slight delay to avoid first-play block
+  setTimeout(() => {
+    speechSynthesis.speak(utterance);
+  }, 200);
 }
+
 
 // -----------------------------
 // === Voice toggle helpers & UI injection ===
