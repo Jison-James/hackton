@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Useless Friend - Honest AI</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: #f8f8f8;
+    }
+    #avatar {
+      width: 150px;
+      border-radius: 50%;
+      margin-top: 10px;
+    }
+    input[type="file"],
+    input[type="text"] {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    button {
+      margin: 6px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      background-color: #333;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+    button:hover {
+      background-color: #555;
+    }
+    #response {
+      margin-top: 20px;
+      padding: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>🤖 Useless Friend</h1>
+  <img src="jubinavatar.png" alt="Avatar" id="avatar">
+  <p>The friend who roasts your food, face, and feelings 💀</p>
+
+  <input type="file" id="upload" accept="image/*" />
+  <br/>
+  <input type="text" id="userText" placeholder="Ask a riddle, say 'motivate me', etc..." />
+
+  <div>
+    <button onclick="trigger('food')">🍔 Analyze Food</button>
+    <button onclick="trigger('face')">🧍 Roast My Face</button>
+    <button onclick="trigger('maze')">🧩 Solve Maze</button>
+    <button onclick="trigger('palm')">✋ Palm Reading</button>
+    <button onclick="trigger('riddle')">❓ Ask Riddle</button>
+    <button onclick="trigger('motivate')">🔥 Motivate Me</button>
+    <button onclick="trigger('chat')">💬 Random Chat</button>
+  </div>
+
+  <div id="response">Your useless friend awaits...</div>
+
+  <!-- ✅ Module script with main logic -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>

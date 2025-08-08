@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Maze Solver – Path Checker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h2 { margin: 0; }
+
+    #maze {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      gap: 2px;
+      margin: 20px auto;
+      justify-content: center;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .wall { background: #333; }
+    .path { background: white; }
+    .start { background: green !important; }
+    .end { background: red !important; }
+    .drawn { background: lightblue !important; }
+    .solution { background: gold !important; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button, select {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover { background: #0056b3; }
+
+    #message {
+      margin-top: 10px;
+      color: #cc0000;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>🧠 Maze Solver – Draw & Solve</h2>
+  <p>Toggle walls or draw your path. Arrow keys also work.</p>
+
+  <div class="controls">
+    <button onclick="generateMaze()">🌀 Regenerate</button>
+    <select onchange="setMode(this.value)">
+      <option value="edit">🖱️ Edit Walls</option>
+      <option value="draw">✏️ Draw Path</option>
+    </select>
+    <button onclick="solveMaze()">🧠 Solve</button>
+    <button onclick="checkDrawnPath()">🔍 Check My Path</button>
+    <button onclick="resetDrawn()">♻️ Clear Drawing</button>
+    <button onclick="goBack()">⬅️ Back</button>
+  </div>
+
+  <div id="maze"></div>
+  <div id="message"></div>
+
+  <script>
+    const ROWS = 10, COLS = 10;
+    const start = [0, 0], end = [9, 9];
+    let mazeData = [], drawnPath = [], player = [...start], mode = "edit";
+
+    const maze = document.getElementById("maze");
+    const message = document.getElementById("message");
+
+    function generateMaze() {
+      let attempt = 0;
+      do {
+        attempt++;
+        mazeData = Array.from({ length: ROWS }, (_, r) =>
+          Array.from({ length: COLS }, (_, c) =>
+            (r === start[0] && c === start[1]) || (r === end[0] && c === end[1]) ? 0 : (Math.random() < 0.3 ? 1 : 0)
+          )
+        );
+      } while (!hasValidPath());
+      drawnPath = [];
+      player = [...start];
+      drawMaze();
+      message.innerText = "";
+    }
+
+    function drawMaze(solutionPath = []) {
+      maze.innerHTML = '';
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const div = document.createElement('div');
+          div.className = 'cell ' + (mazeData[r][c] ? 'wall' : 'path');
+          if (r === start[0] && c === start[1]) div.classList.add('start');
+          if (r === end[0] && c === end[1]) div.classList.add('end');
+          if (drawnPath.some(p => p[0] === r && p[1] === c)) div.classList.add('drawn');
+          if (solutionPath.some(p => p[0] === r && p[1] === c)) div.classList.add('solution');
+
+          div.onclick = () => {
+            if (mode === "edit" && !(r === start[0] && c === start[1]) && !(r === end[0] && c === end[1])) {
+              mazeData[r][c] = 1 - mazeData[r][c];
+              drawMaze();
+            } else if (mode === "draw" && mazeData[r][c] === 0) {
+              const idx = drawnPath.findIndex(p => p[0] === r && p[1] === c);
+              if (idx >= 0) drawnPath.splice(idx, 1);
+              else drawnPath.push([r, c]);
+              drawMaze();
+            }
+          };
+
+          maze.appendChild(div);
+        }
+      }
+    }
+
+    function setMode(m) {
+      mode = m;
+    }
+
+    function hasValidPath() {
+      const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      function dfs(r, c) {
+        if (r < 0 || c < 0 || r >= ROWS || c >= COLS || mazeData[r][c] === 1 || visited[r][c]) return false;
+        visited[r][c] = true;
+        if (r === end[0] && c === end[1]) return true;
+        return dfs(r+1, c) || dfs(r-1, c) || dfs(r, c+1) || dfs(r, c-1);
+      }
+      return dfs(start[0], start[1]);
+    }
+
+    function solveMaze() {
+      message.innerText = "";
+      const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      const path = [];
+
+      function dfs(r, c) {
+        if (r < 0 || c < 0 || r >= ROWS || c >= COLS || mazeData[r][c] === 1 || visited[r][c]) return false;
+        visited[r][c] = true;
+        path.push([r, c]);
+        if (r === end[0] && c === end[1]) return true;
+        const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+        for (const [dr, dc] of dirs) {
+          if (dfs(r + dr, c + dc)) return true;
+        }
+        path.pop();
+        return false;
+      }
+
+      if (dfs(start[0], start[1])) {
+        drawMaze(path.filter(p => !(p[0] === start[0] && p[1] === start[1]) && !(p[0] === end[0] && p[1] === end[1])));
+        message.innerText = "✅ Path found!";
+      } else {
+        drawMaze();
+        message.innerText = "❌ No path found!";
+      }
+    }
+
+    function checkDrawnPath() {
+      if (!drawnPath.length) {
+        message.innerText = "⚠️ You haven't drawn a path!";
+        return;
+      }
+
+      const first = drawnPath[0];
+      const last = drawnPath[drawnPath.length - 1];
+
+      const adjacentToStart = Math.abs(first[0] - start[0]) + Math.abs(first[1] - start[1]) <= 1;
+      const adjacentToEnd = Math.abs(last[0] - end[0]) + Math.abs(last[1] - end[1]) <= 1;
+
+      if (!adjacentToStart) {
+        message.innerText = "❌ Path must start at or adjacent to 🟩";
+        return;
+      }
+
+      if (!adjacentToEnd) {
+        message.innerText = "❌ Path must end at or adjacent to 🟥";
+        return;
+      }
+
+      for (let i = 0; i < drawnPath.length - 1; i++) {
+        const [r1, c1] = drawnPath[i];
+        const [r2, c2] = drawnPath[i + 1];
+        const isAdjacent = Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+        const isOpen = mazeData[r2]?.[c2] === 0;
+
+        if (!isAdjacent || !isOpen) {
+          message.innerText = `❌ Invalid path at (${r2}, ${c2})`;
+          return;
+        }
+      }
+
+      message.innerText = "✅ Your path is valid!";
+    }
+
+    function resetDrawn() {
+      drawnPath = [];
+      drawMaze();
+      message.innerText = "";
+    }
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const [r, c] = player;
+      let nr = r, nc = c;
+      if (e.key === 'ArrowUp') nr--;
+      if (e.key === 'ArrowDown') nr++;
+      if (e.key === 'ArrowLeft') nc--;
+      if (e.key === 'ArrowRight') nc++;
+      if (mazeData[nr]?.[nc] === 0) {
+        player = [nr, nc];
+        if (nr === end[0] && nc === end[1]) message.innerText = "🎉 You reached the end!";
+      }
+    });
+
+    generateMaze();
+  </script>
+</body>
+</html>
