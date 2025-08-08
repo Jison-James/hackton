@@ -131,24 +131,42 @@ async function handleFaceRoast(file) {
     // Convert image to base64
     const base64 = await toBase64(file);
 
-    // Use Gemini to detect dominant facial expression
+    // Use Gemini to detect dominant facial expression  .....
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inlineData: { data: base64, mimeType: file.type } },
-              {
-                text: `Analyze this face image and return ONLY the dominant facial expression (e.g., happy, sad, angry, surprised, disgusted, neutral) in one word.`
-              }
-            ]
-          }]
-        })
-      }
-    );
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { inlineData: { data: base64, mimeType: file.type } },
+          {
+            text: `
+Analyze the face in this image and return ONLY JSON in this format:
+{
+  "top_emotion": "<happy|sad|angry|surprised|neutral|disgust|fear>",
+  "top_score": <float 0-1>,
+  "emotions": {
+    "happy": <float>,
+    "sad": <float>,
+    "angry": <float>,
+    "surprised": <float>,
+    "neutral": <float>,
+    "disgust": <float>,
+    "fear": <float>
+  }
+}
+If no human face detected: {"error":"no_face_detected"}
+`
+          }
+        ]
+      }],
+      generation_config: { response_mime_type: "application/json" }
+    })
+  }
+);
+ 
 
     const geminiData = await geminiRes.json();
     const expression = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || "neutral";
