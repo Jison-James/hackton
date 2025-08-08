@@ -158,7 +158,7 @@ async function handleFaceRoast(file) {
        `The user's face looks "${expression}". 
        1. Emotion: ${expression} 
        2. Roast them in a mocking, NSFW, funny style. 
-          Be chaotic, sarcastic, and add emojis fitting the roast. `
+          Be chaotic, sarcastic, and add emojis fitting the roast.`
     );
 
     return { expression, insult };
