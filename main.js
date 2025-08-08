@@ -8,42 +8,6 @@ import {
   handleFaceRoast
 } from './api.js';
 
-// 🎭 Emojiify stage directions like (shaking my head), (waving my hand), etc.
-function emojiifyStageDirections(text) {
-  const replacements = {
-    '(deep, mysterious voice)': '🧙‍♂️🎙️',
-    '(waves hands dramatically)': '🫴✨',
-    '(tapping fingers on the palm)': '👉🖐️',
-    '(making a spooky face)': '😱👻',
-    '(dramatic pause)': '😳⏸️',
-    '(wagging finger)': '☝️🙅',
-    '(shaking head)': '😔👎',
-    '(squinting)': '🧐',
-    '(making a "whooshing" sound)': '💨',
-    '(dramatic flourish)': '🎩✨',
-    '(mysterious smile)': '😏🕵️‍♂️',
-    '(shrugging)': '🤷‍♂️',
-    '(blowing on fingernails)': '💅',
-    '(muttering to self)': '🧙‍♂️🤫'
-    '(pausing dramatically)': '😳',
-    '(gazing intensely)': '🫣🔮',
-    '(tapping on your palm)': '👉🖐️',
-    '(pointing to a random spot)': '👉❓',
-    '(leaning in closer)': '🤫',
-    '(waving my hand mysteriously)': '🫴✨',
-    '(shuddering)': '😨',
-    '(tasting the air)': '👃👅',
-    '(shaking my head)': '😔👎',
-    '(pounding my fist on the table)': '✊💥',
-    '(motions to a waiting client)': '🧙‍♂️➡️🧍',
-    '(winking)': '😉'
-  };
-
-  return text.replace(/\(([^)]+)\)/g, (match) =>
-    replacements[match.toLowerCase()] || `${match} 🎭`
-  );
-}
-
 // ⚡ Main trigger for all buttons
 window.trigger = async function (type) {
   const file = document.getElementById("upload").files[0];
@@ -110,7 +74,7 @@ window.trigger = async function (type) {
     }
 
     // 🧠 Format and display result
-    let text =
+    const text =
       result.roast ||
       result.insult ||
       result.answer ||
@@ -120,14 +84,22 @@ window.trigger = async function (type) {
       result.commentary ||
       "🤔 Nothing to say.";
 
-    // 🎭 Convert theatrical stage directions to emojis
-    text = emojiifyStageDirections(text);
-
-    // 😏 Convert emphasized words to emojis (e.g., *facepalm*)
     const emojiMap = {
       'rolls eyes': '🙄',
       'shrugs': '🤷',
       'facepalm': '🤦',
+       '(pausing dramatically)': '😳',
+    '(gazing intensely)': '🫣🔮',
+    '(tapping on your palm)': '👉🖐️',
+    '(pointing to a random spot)': '👉❓',
+    '(leaning in closer)': '🤫',
+    '(waving my hand mysteriously)': '🫴✨',
+    '(shuddering)': '😨',
+    '(tasting the air)': '👃👅',
+    '(shaking my head)': '😔👎',
+    '(pounding my fist on the table)': '✊💥',
+    '(motions to a waiting client)': '🧙‍♂️➡️🧍',
+    '(winking)': '😉'
     };
 
     const formattedText = text.replace(/\*(.*?)\*/g, (_, action) =>
@@ -141,4 +113,3 @@ window.trigger = async function (type) {
     responseEl.innerText = "💥 Something broke. Try again later.";
   }
 };
-
