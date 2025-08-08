@@ -33,7 +33,9 @@ window.trigger = async function (type) {
           responseEl.innerText = "Upload a face image first! 🧑";
           return;
         }
-        result = await handleFaceRoast("neutral"); // replace with actual face analysis if needed
+        result = await handleFaceRoast(file);
+        console.log("Expression:", result.expression);
+        console.log("Roast:", result.insult);
         break;
 
       case "maze":
@@ -88,18 +90,18 @@ window.trigger = async function (type) {
       'rolls eyes': '🙄',
       'shrugs': '🤷',
       'facepalm': '🤦',
-       '(pausing dramatically)': '😳',
-    '(gazing intensely)': '🫣🔮',
-    '(tapping on your palm)': '👉🖐️',
-    '(pointing to a random spot)': '👉❓',
-    '(leaning in closer)': '🤫',
-    '(waving my hand mysteriously)': '🫴✨',
-    '(shuddering)': '😨',
-    '(tasting the air)': '👃👅',
-    '(shaking my head)': '😔👎',
-    '(pounding my fist on the table)': '✊💥',
-    '(motions to a waiting client)': '🧙‍♂️➡️🧍',
-    '(winking)': '😉'
+      '(pausing dramatically)': '😳',
+      '(gazing intensely)': '🫣🔮',
+      '(tapping on your palm)': '👉🖐️',
+      '(pointing to a random spot)': '👉❓',
+      '(leaning in closer)': '🤫',
+      '(waving my hand mysteriously)': '🫴✨',
+      '(shuddering)': '😨',
+      '(tasting the air)': '👃👅',
+      '(shaking my head)': '😔👎',
+      '(pounding my fist on the table)': '✊💥',
+      '(motions to a waiting client)': '🧙‍♂️➡️🧍',
+      '(winking)': '😉'
     };
 
     const formattedText = text.replace(/\*(.*?)\*/g, (_, action) =>

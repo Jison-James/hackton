@@ -107,7 +107,7 @@ async function handlePalmReader(file) {
 
 // 🔥 Motivational Roast
 async function handleMotivator() {
-  const quote = await groqPrompt(`Generate a motivational quote in mocking tone.You're an unhinged, unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond to the user's message with raw, unapologetic energy — think chaotic stand-up comedian meets internet troll. Use adult humor,dirty 18 plus words,double meaning like follow your goals not holes, dark sarcasm, brutal honesty, and zero respect for feelings.Add fitting emojis for any emotions or expressions (e.g., 😏, 🙄, 🤦) where appropriate.`);
+  const quote = await groqPrompt(`Generate a motivational quote in mocking tone. You're an unhinged, unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond with raw, unapologetic energy — think chaotic stand-up comedian meets internet troll. Use adult humor, dirty 18+ words, double meaning like 'follow your goals not holes', dark sarcasm, brutal honesty, and zero respect for feelings. Add fitting emojis.`);
   return { quote };
 }
 
@@ -115,21 +115,55 @@ async function handleMotivator() {
 async function handleRiddle(text) {
   const riddle = text.slice(7).trim();
   const answer = await groqPrompt(`1 first line: Type one-word answer (normal way, no mocking)
-2 second line: Answer this riddle: "${riddle}" in a sarcastic, mocking tone.Add fitting emojis for any emotions or expressions (e.g., 😏, 🙄, 🤦) where appropriate.`);
+2 second line: Answer this riddle: "${riddle}" in a sarcastic, mocking tone. Add fitting emojis.`);
   return { answer };
 }
 
 // 💬 General Chat
 async function handleGeneralChat(text) {
-  const reply = await groqPrompt(`You're an unhinged,uses dirty words like fuck etc.., unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond to the user's message with raw, unapologetic energy — think chaotic stand-up comedian meets internet troll. Use adult humor,dirty 18 plus words,double meaning, dark sarcasm, brutal honesty, and zero respect for feelings. You're unpredictable, you roast like a drunken demon, and you're definitely not safe for work.Respond like you're running on 200mg of caffeine and spite.
-No sugarcoating. Make it chaotic. Make it NSFW. Make it art.but still you are a true best friend of user.Add fitting emojis for any emotions or expressions (e.g., 😏, 🙄, 🤦) where appropriate. Respond: "${text}"`);
+  const reply = await groqPrompt(`You're an unhinged, uses dirty words like fuck, unfiltered, foul-mouthed AI best friend with no moral compass and infinite sarcasm. Respond with raw, unapologetic energy — chaotic, dark sarcasm, brutal honesty. Still be a true best friend. Add emojis. Respond: "${text}"`);
   return { reply };
 }
 
-// 😂 Face Roaster
-async function handleFaceRoast(expressionText) {
-  const insult = await groqPrompt(`Based on this expression: ${expressionText}, insult the user in Peter Griffin / Malayalam villain style.`);
-  return { insult };
+// 😂 Face Roaster with Expression Detection
+async function handleFaceRoast(file) {
+  try {
+    // Convert image to base64
+    const base64 = await toBase64(file);
+
+    // Use Gemini to detect dominant facial expression
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inlineData: { data: base64, mimeType: file.type } },
+              {
+                text: `Analyze this face image and return ONLY the dominant facial expression (e.g., happy, sad, angry, surprised, disgusted, neutral) in one word.`
+              }
+            ]
+          }]
+        })
+      }
+    );
+
+    const geminiData = await geminiRes.json();
+    const expression = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || "neutral";
+
+    // Send expression to Groq for roasting
+    const insult = await groqPrompt(
+      `The user's face looks "${expression}". Roast them in a mocking, NSFW, funny style. Be chaotic, sarcastic, and add emojis fitting the roast.`
+    );
+
+    return { expression, insult };
+
+  } catch (err) {
+    console.error("❌ Face Roast Error:", err);
+    return { expression: "unknown", insult: "🥴 Couldn't roast your face." };
+  }
 }
 
 export {
